@@ -24,6 +24,11 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.graphql</groupId>
+            <artifactId>helidon-graphql-server</artifactId>
+<!--            <version>2.2.0</version>-->
+        </dependency>
+        <dependency>
             <groupId>io.helidon.media</groupId>
             <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
@@ -53,6 +58,11 @@
             <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.graphql-java</groupId>-->
+<!--            <artifactId>graphql-java</artifactId>-->
+<!--            <version>16.1</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

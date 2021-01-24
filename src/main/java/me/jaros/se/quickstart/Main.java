@@ -1,14 +1,24 @@
 
 package me.jaros.se.quickstart;
 
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.StaticDataFetcher;
+import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.TypeDefinitionRegistry;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.graphql.server.GraphQlSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import java.util.List;
 
 /**
  * The application main class.
@@ -41,7 +51,10 @@ public final class Main {
         Config config = Config.create();
 
         // Build server with JSONP support
-        WebServer server = WebServer.builder(createRouting(config))
+        WebServer server = WebServer.builder()
+                .routing(Routing.builder()
+                        .register(GraphQlSupport.create(buildSchema()))
+                        .build())
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build();
@@ -64,6 +77,28 @@ public final class Main {
         // Server threads are not daemon. No need to block. Just react.
 
         return server;
+    }
+
+    private static GraphQLSchema buildSchema() {
+        String schema = "type Query{\n"
+                + "hello: String \n"
+                + "helloInDifferentLanguages: [String] \n"
+                + "\n}";
+
+        SchemaParser schemaParser = new SchemaParser();
+        TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
+
+        // DataFetcher to return various hello's in difference languages
+        DataFetcher<List<String>> hellosDataFetcher = (DataFetcher<List<String>>) environment ->
+                List.of("Bonjour", "Hola", "Zdravstvuyte", "Nǐn hǎo", "Salve", "Gudday", "Konnichiwa", "Guten Tag");
+
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
+                .type("Query", builder -> builder.dataFetcher("helloInDifferentLanguages", hellosDataFetcher))
+                .build();
+
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
     }
 
     /**
